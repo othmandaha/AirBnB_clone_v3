@@ -75,23 +75,38 @@ class DBStorage:
         """call remove() method on the private session attribute"""
         self.__session.remove()
 
-    def get(self, cls, id):
-    """Retrieve an object"""
-    if cls is not None and type(cls) is str and id is not None and\
-       type(id) is str and cls in name2class:
-        cls = name2class[cls]
-        result = self.__session.query(cls).filter(cls.id == id).first()
-        return result
-    else:
-        return None
+    def get(self, cls, id_):
+        """
+        Retrieve one object
+
+        Arguments:
+            cls: string representing a class name
+            id_: string representing the object id, primary key
+
+        Return:
+           object of cls and id passed in argument or None
+        """
+        if (cls not in self.__models_available) or (id_ is None):
+            return None
+        return self.__session.query(
+                self.__models_available[cls]).get(id_)
 
     def count(self, cls=None):
-    """Count number of objects in storage"""
-    total = 0
-    if type(cls) == str and cls in name2class:
-        cls = name2class[cls]
-        total = self.__session.query(cls).count()
-    elif cls is None:
-        for cls in name2class.values():
-            total += self.__session.query(cls).count()
-    return total
+        """
+        Number of objects in a certain class
+
+        Arguments:
+            cls: optional, string representing a class name (default None)
+
+        Return:
+            number of objects in that class or in total
+            -1 if the argument is not valid
+        """
+        if cls is None:
+            total = 0
+            for v in self.__models_available.values():
+                total += self.__session.query(v).count()
+            return total
+        if cls in self.__models_available.keys():
+            return self.__session.query(self.__models_available[cls]).count()
+        return -1
